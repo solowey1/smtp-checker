@@ -29,7 +29,7 @@ class Reporter {
     this.lang = lang;
     this.config = config;
     this.stream = stream;
-    this.c = makePalette(config.color && stream.isTTY !== false);
+    this.c = makePalette(Boolean(config.color && stream.isTTY));
     this.silent = config.json || config.quiet;
   }
 
