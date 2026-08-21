@@ -1,0 +1,50 @@
+{
+  "name": "smtp-checker",
+  "version": "1.0.0",
+  "description": "Быстрая проверка SMTP из консоли: подключение, TLS, аутентификация и тестовое письмо. Zero-dependency CLI to verify SMTP settings for Gmail, Yandex, Mail.ru, Outlook, SES and other providers.",
+  "keywords": [
+    "smtp",
+    "smtp-test",
+    "smtp-check",
+    "email",
+    "mail",
+    "cli",
+    "starttls",
+    "tls",
+    "diagnostics",
+    "zero-dependency"
+  ],
+  "license": "MIT",
+  "author": "solowey1",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/solowey1/smtp-checker.git"
+  },
+  "bugs": {
+    "url": "https://github.com/solowey1/smtp-checker/issues"
+  },
+  "homepage": "https://github.com/solowey1/smtp-checker#readme",
+  "main": "index.js",
+  "bin": {
+    "smtp-checker": "bin/smtp-checker.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "index.js",
+    "README.md",
+    "README.en.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "start": "node bin/smtp-checker.js",
+    "help": "node bin/smtp-checker.js --help",
+    "list": "node bin/smtp-checker.js --list"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
