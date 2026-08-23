@@ -9,7 +9,6 @@ const os = require('os');
 
 /** Кодирование заголовка по RFC 2047, если в нём есть не-ASCII. */
 function encodeHeaderValue(value) {
-  // eslint-disable-next-line no-control-regex
   if (/^[\x20-\x7E]*$/.test(value)) return value;
   return `=?UTF-8?B?${Buffer.from(value, 'utf8').toString('base64')}?=`;
 }

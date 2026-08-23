@@ -192,6 +192,8 @@ async function ehloOrHelo(client, hostname) {
 }
 
 /** Проверка доступности набора портов без аутентификации. */
+// async ради единых семантик: любые ошибки приходят отказом промиса, а не синхронным throw.
+// eslint-disable-next-line require-await
 async function probePorts(host, ports, timeout = 5000, implicitTlsPorts = [465, 2465]) {
   const attempts = ports.map(
     (port) =>

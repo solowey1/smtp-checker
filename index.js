@@ -19,6 +19,8 @@ const { buildTestMessage } = require('./src/message');
  *                           from, to, send, secure, starttls, insecure, timeout, lang…
  * @returns {Promise<object>} структурированный результат проверки
  */
+// async намеренно: ошибки resolveConfig должны приходить отказом промиса, а не синхронным throw.
+// eslint-disable-next-line require-await
 async function checkSmtp(options = {}) {
   const lang = options.lang || detectLanguage();
   const t = createTranslator(lang);

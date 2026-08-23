@@ -41,10 +41,15 @@
   },
   "scripts": {
     "test": "node --test test/*.test.js",
+    "test:coverage": "node --test --experimental-test-coverage test/*.test.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "start": "node bin/smtp-checker.js",
     "help": "node bin/smtp-checker.js --help",
     "list": "node bin/smtp-checker.js --list"
   },
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "eslint": "^10.9.0"
+  }
 }
