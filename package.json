@@ -43,12 +43,17 @@
     "src",
     "index.js",
     "index.d.ts",
+    "CHANGELOG.md",
     "README.md",
     "README.en.md",
     "LICENSE"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=20.10.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "test": "node --test test/*.test.js",

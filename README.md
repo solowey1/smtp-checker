@@ -6,7 +6,7 @@
 Подключается к серверу, проверяет TLS и сертификат, логинится, при желании отправляет тестовое письмо — и показывает весь диалог с сервером, если что-то пошло не так.
 
 [![CI](https://github.com/solowey1/smtp-checker/actions/workflows/ci.yml/badge.svg)](https://github.com/solowey1/smtp-checker/actions/workflows/ci.yml)
-![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
+![Node](https://img.shields.io/badge/node-%3E%3D20.10-brightgreen)
 ![Зависимости](https://img.shields.io/badge/%D0%B7%D0%B0%D0%B2%D0%B8%D1%81%D0%B8%D0%BC%D0%BE%D1%81%D1%82%D0%B8-0-blue)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
@@ -62,6 +62,20 @@ npm install -g smtp-checker
 smtp-checker --user you@gmail.com --pass "пароль приложения"
 ```
 
+Из GitHub Packages (пакет `@solowey1/smtp-checker`). Реестр GitHub требует
+аутентификации даже для публичных пакетов, поэтому нужен
+[токен](https://github.com/settings/tokens) с правом `read:packages`:
+
+```bash
+# ~/.npmrc
+@solowey1:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=ВАШ_ТОКЕН
+```
+
+```bash
+npm install -g @solowey1/smtp-checker
+```
+
 Из исходников:
 
 ```bash
@@ -70,7 +84,8 @@ cd smtp-checker
 node bin/smtp-checker.js --help
 ```
 
-Нужен Node.js 18 или новее. Устанавливать нечего — `npm install` в проекте не нужен, зависимостей нет.
+Нужен Node.js 20.10 или новее. Runtime-зависимостей нет — `npm install` нужен
+только для разработки (ESLint).
 
 ## Как пользоваться
 
@@ -350,7 +365,9 @@ if (!result.ok) {
 ## Разработка
 
 ```bash
-npm test          # 43 теста: юниты и интеграция против фейкового SMTP-сервера
+npm ci            # только dev-зависимости: ESLint
+npm test          # 49 тестов: юниты и интеграция против фейкового SMTP-сервера
+npm run lint      # ESLint
 npm run list      # список провайдеров
 npm run help      # справка
 ```

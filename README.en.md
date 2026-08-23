@@ -6,7 +6,7 @@ A console tool that answers one question in a couple of seconds: *is SMTP actual
 It connects to the server, checks TLS and the certificate, authenticates, optionally sends a test message — and shows the whole SMTP dialogue when something goes wrong.
 
 [![CI](https://github.com/solowey1/smtp-checker/actions/workflows/ci.yml/badge.svg)](https://github.com/solowey1/smtp-checker/actions/workflows/ci.yml)
-![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen)
+![Node](https://img.shields.io/badge/node-%3E%3D20.10-brightgreen)
 ![Dependencies](https://img.shields.io/badge/dependencies-0-blue)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
@@ -62,6 +62,20 @@ npm install -g smtp-checker
 smtp-checker --user you@gmail.com --pass "app password"
 ```
 
+From GitHub Packages (published as `@solowey1/smtp-checker`). The GitHub registry
+requires authentication even for public packages, so you need a
+[token](https://github.com/settings/tokens) with the `read:packages` scope:
+
+```bash
+# ~/.npmrc
+@solowey1:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=YOUR_TOKEN
+```
+
+```bash
+npm install -g @solowey1/smtp-checker
+```
+
 From source:
 
 ```bash
@@ -70,7 +84,8 @@ cd smtp-checker
 node bin/smtp-checker.js --help
 ```
 
-Requires Node.js 18 or newer. There is nothing to install — the project has no dependencies, so `npm install` is not needed.
+Requires Node.js 20.10 or newer. There are no runtime dependencies — `npm install`
+is only needed for development (ESLint).
 
 ## Usage
 
@@ -350,7 +365,9 @@ The whole protocol is about 800 lines on bare `net` and `tls`, no wrappers: [src
 ## Development
 
 ```bash
-npm test          # 43 tests: unit plus integration against a fake SMTP server
+npm ci            # dev dependencies only: ESLint
+npm test          # 49 tests: unit plus integration against a fake SMTP server
+npm run lint      # ESLint
 npm run list      # list providers
 npm run help      # show help
 ```
