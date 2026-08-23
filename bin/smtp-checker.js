@@ -23,7 +23,7 @@ async function main(argv) {
   try {
     args = parseArgs(argv);
   } catch (error) {
-    return usageError(error, t, true);
+    return usageError(error, t);
   }
 
   if (args.lang === 'ru' || args.lang === 'en') {
@@ -31,7 +31,9 @@ async function main(argv) {
     t = createTranslator(lang);
   }
 
-  const colorEnabled = !args['no-color'] && !process.env.NO_COLOR && process.stdout.isTTY;
+  const colorEnabled = !args['no-color'] && !process.env.NO_COLOR && Boolean(process.stdout.isTTY);
+  // Ошибки уходят в stderr — раскраску решает он, а не stdout (его могли перенаправить в файл).
+  const stderrColor = !args['no-color'] && !process.env.NO_COLOR && Boolean(process.stderr.isTTY);
 
   if (args.help) {
     process.stdout.write(helpText(lang, colorEnabled));
@@ -52,7 +54,7 @@ async function main(argv) {
   try {
     config = resolveConfig(args, process.env);
   } catch (error) {
-    return usageError(error, t, colorEnabled);
+    return usageError(error, t, stderrColor);
   }
 
   // --probe: только сканирование портов, без логина.
@@ -95,10 +97,10 @@ async function main(argv) {
       try {
         config.pass = await promptPassword(t('promptPassword', { user: config.user || config.host }));
       } catch {
-        return usageError(new ConfigError('errNoPassword'), t, colorEnabled);
+        return usageError(new ConfigError('errNoPassword'), t, stderrColor);
       }
     }
-    if (!config.pass) return usageError(new ConfigError('errNoPassword'), t, colorEnabled);
+    if (!config.pass) return usageError(new ConfigError('errNoPassword'), t, stderrColor);
   }
 
   const reporter = new Reporter({ t, lang, config, stream: process.stdout });
@@ -118,16 +120,20 @@ function uniquePorts(config) {
   return [...new Set([...fromProvider, ...DEFAULT_PROBE_PORTS])].sort((a, b) => a - b);
 }
 
-function usageError(error, t, colorEnabled) {
+function usageError(error, t, colorEnabled = Boolean(process.stderr.isTTY)) {
   const c = makePalette(colorEnabled);
   const message = error instanceof ConfigError ? t(error.i18nKey, error.params) : error.message;
   process.stderr.write(c.red('✗ ') + message + '\n');
   return EXIT.USAGE;
 }
 
+// Выставляем код выхода вместо process.exit(): при выводе в pipe или файл
+// (`smtp-checker --json > out.json`) незаписанный хвост stdout иначе может потеряться.
 main(process.argv.slice(2))
-  .then((code) => process.exit(code))
+  .then((code) => {
+    process.exitCode = code;
+  })
   .catch((error) => {
     process.stderr.write(`✗ ${error && error.stack ? error.stack : error}\n`);
-    process.exit(EXIT.USAGE);
+    process.exitCode = EXIT.USAGE;
   });
