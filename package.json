@@ -24,7 +24,17 @@
     "url": "https://github.com/solowey1/smtp-checker/issues"
   },
   "homepage": "https://github.com/solowey1/smtp-checker#readme",
+  "type": "commonjs",
   "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "require": "./index.js",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "bin": {
     "smtp-checker": "bin/smtp-checker.js"
   },
@@ -32,6 +42,7 @@
     "bin",
     "src",
     "index.js",
+    "index.d.ts",
     "README.md",
     "README.en.md",
     "LICENSE"

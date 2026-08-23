@@ -8,7 +8,7 @@
  */
 
 const { runCheck, probePorts } = require('./src/check');
-const { resolveConfig, connectionMode } = require('./src/config');
+const { resolveConfig, connectionMode, ConfigError } = require('./src/config');
 const { createTranslator, detectLanguage } = require('./src/i18n');
 const { PROVIDERS, listProviders, getProvider, detectProvider } = require('./src/providers');
 const { SmtpClient, parseCapabilities, parseReply } = require('./src/client');
@@ -37,6 +37,7 @@ module.exports = {
   probePorts,
   resolveConfig,
   connectionMode,
+  ConfigError,
   PROVIDERS,
   listProviders,
   getProvider,
