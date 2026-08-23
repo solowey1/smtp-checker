@@ -4,21 +4,53 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  types:
+    name: Type declarations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Check index.d.ts compiles
+        run: npx --yes typescript@latest --noEmit --strict --lib es2022 index.d.ts
+
   test:
+    name: Tests (node ${{ matrix.node }}, ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        node: [18, 20, 22]
+        node: [20, 22, 24]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
-      - name: Tests
+      - name: Unit and integration tests
         run: node --test test/unit.test.js test/integration.test.js
       - name: CLI smoke test
         run: |
@@ -26,3 +58,20 @@ jobs:
           node bin/smtp-checker.js --list
           node bin/smtp-checker.js --help
           node bin/smtp-checker.js -u ci@gmail.com --dry-run --json
+
+  package:
+    name: Package contents
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: npm pack --dry-run
+        run: npm pack --dry-run
+      - name: Installed CLI works
+        run: |
+          npm pack
+          npm install -g ./smtp-checker-*.tgz
+          smtp-checker --version
+          smtp-checker -u ci@gmail.com --dry-run --json
