@@ -34,6 +34,20 @@ class ConfigError extends Error {
 }
 
 /**
+ * Целое число в заданных границах. Пустое значение -> null.
+ * Без этой проверки строка вроде --timeout abc превращалась бы в NaN,
+ * а setTimeout(fn, NaN) срабатывает мгновенно.
+ */
+function parseInteger(value, flag, min, max) {
+  if (value === null || value === undefined || value === '') return null;
+  const number = Number(String(value).trim());
+  if (!Number.isInteger(number) || number < min || number > max) {
+    throw new ConfigError('errBadNumber', { flag, value: String(value), min, max });
+  }
+  return number;
+}
+
+/**
  * Разбор argv в плоский объект.
  * Поддерживает: --key value, --key=value, --flag, -u value, -sv.
  */
@@ -132,10 +146,7 @@ function resolveConfig(args, env = process.env) {
   const host = args.host || env.SMTP_HOST || (provider && provider.host) || null;
   if (!host) throw new ConfigError('errNoHost');
 
-  const explicitPort = args.port != null ? Number(args.port) : (env.SMTP_PORT ? Number(env.SMTP_PORT) : null);
-  if (explicitPort != null && (!Number.isInteger(explicitPort) || explicitPort < 1 || explicitPort > 65535)) {
-    throw new ConfigError('errNeedValue', { flag: '--port' });
-  }
+  const explicitPort = parseInteger(args.port != null ? args.port : env.SMTP_PORT, '--port', 1, 65535);
   const port = explicitPort != null ? explicitPort : (provider ? provider.port : 587);
 
   let secure;
@@ -148,6 +159,18 @@ function resolveConfig(args, env = process.env) {
   else secure = IMPLICIT_TLS_PORTS.includes(port);
 
   const useStarttls = !secure && !args.plain;
+  const auth = !args['no-auth'];
+  const send = Boolean(args.send);
+  const to = args.to || env.SMTP_TO || from;
+
+  // Проверяем до подключения: иначе на сервер уходил бы логин "null",
+  // а MAIL FROM:<> падал бы с TypeError уже посреди сессии.
+  if (auth && !args.oauth && !env.SMTP_OAUTH_TOKEN && !user) throw new ConfigError('errNoUser');
+  if (send) {
+    if (!from) throw new ConfigError('errNoSender');
+    assertAddress(from, '--from');
+    assertAddress(to, '--to');
+  }
 
   return {
     provider,
@@ -159,23 +182,48 @@ function resolveConfig(args, env = process.env) {
     rejectUnauthorized: !args.insecure,
     user,
     from,
-    to: args.to || env.SMTP_TO || from,
-    auth: args['no-auth'] ? false : true,
+    to,
+    auth,
     mechanism: args.auth || env.SMTP_AUTH || null,
     accessToken: args.oauth || env.SMTP_OAUTH_TOKEN || null,
-    send: Boolean(args.send),
+    send,
     subject: args.subject || null,
     text: args.text || null,
     helo: args.helo || env.SMTP_HELO || null,
-    timeout: Number(args.timeout || env.SMTP_TIMEOUT || 20000),
+    timeout: parseInteger(args.timeout != null ? args.timeout : env.SMTP_TIMEOUT, '--timeout', 100, 600000) || 20000,
     verbose: Boolean(args.verbose),
     quiet: Boolean(args.quiet),
     json: Boolean(args.json),
     color: !args['no-color'] && !env.NO_COLOR,
     dryRun: Boolean(args['dry-run']),
     probe: Boolean(args.probe),
-    ports: args.ports ? String(args.ports).split(',').map((p) => Number(p.trim())).filter(Boolean) : null,
+    ports: parsePortList(args.ports),
   };
+}
+
+/**
+ * Грубая проверка адреса: "user@example.com" или "Имя <user@example.com>".
+ * Полную валидацию по RFC 5322 не делаем — задача в том, чтобы отсечь
+ * очевидный мусор до MAIL FROM, а не заменить собой сервер.
+ */
+function assertAddress(value, flag) {
+  const bare = /<([^<>]+)>/.exec(String(value || ''));
+  const address = (bare ? bare[1] : String(value || '')).trim();
+  // Домен без точки (user@localhost) допускаем: утилитой проверяют и локальные релеи.
+  if (!/^[^\s@<>,;]+@[^\s@<>,;]+$/.test(address)) {
+    throw new ConfigError('errBadAddress', { flag, value: String(value) });
+  }
+}
+
+/** Список портов для --probe: "25,465,587". */
+function parsePortList(value) {
+  if (!value) return null;
+  const ports = String(value)
+    .split(',')
+    .map((part) => part.trim())
+    .filter((part) => part !== '')
+    .map((part) => parseInteger(part, '--ports', 1, 65535));
+  return ports.length ? [...new Set(ports)] : null;
 }
 
 /** Режим соединения одним словом — для отчёта. */
@@ -185,4 +233,4 @@ function connectionMode(config) {
   return 'plain';
 }
 
-module.exports = { parseArgs, resolveConfig, loadDotEnv, connectionMode, ConfigError, BOOLEAN_OPTIONS, VALUE_OPTIONS, SHORT_OPTIONS, IMPLICIT_TLS_PORTS };
+module.exports = { parseArgs, resolveConfig, loadDotEnv, connectionMode, ConfigError, parseInteger, assertAddress, BOOLEAN_OPTIONS, VALUE_OPTIONS, SHORT_OPTIONS, IMPLICIT_TLS_PORTS };

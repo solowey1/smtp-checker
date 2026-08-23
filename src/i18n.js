@@ -62,6 +62,10 @@ const STRINGS = {
     errNotAccepted: 'Сервер не принял письмо ({code}): {text}',
     errUnknownFlag: 'Неизвестный параметр: {flag}. Справка: --help',
     errNeedValue: 'Параметру {flag} нужно значение.',
+    errBadNumber: 'Параметру {flag} нужно целое число от {min} до {max}, получено: {value}.',
+    errNoUser: 'Не указан логин. Передайте --user (обычно это полный e-mail) или отключите вход через --no-auth.',
+    errNoSender: 'Не удалось определить отправителя. Укажите --from или --user.',
+    errBadAddress: 'Параметр {flag} не похож на адрес: {value}. Ожидается user@example.com или "Имя <user@example.com>".',
 
     // подсказки
     hintDns: 'Хост не резолвится — проверьте написание в --host.',
@@ -146,6 +150,10 @@ const STRINGS = {
     errNotAccepted: 'The server rejected the message ({code}): {text}',
     errUnknownFlag: 'Unknown option: {flag}. See --help.',
     errNeedValue: 'Option {flag} requires a value.',
+    errBadNumber: 'Option {flag} expects an integer between {min} and {max}, got: {value}.',
+    errNoUser: 'No login supplied. Pass --user (usually the full e-mail address) or skip the login with --no-auth.',
+    errNoSender: 'Cannot determine the sender. Pass --from or --user.',
+    errBadAddress: 'Option {flag} does not look like an address: {value}. Expected user@example.com or "Name <user@example.com>".',
 
     hintDns: 'The hostname does not resolve — check the spelling in --host.',
     hintRefused: 'The port is closed. Try another one: --port 587 or --port 465.',

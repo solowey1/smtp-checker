@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { parseReply, parseCapabilities, matchesExpectation } = require('../src/client');
-const { parseArgs, resolveConfig, connectionMode, ConfigError } = require('../src/config');
+const { parseArgs, resolveConfig, connectionMode, ConfigError, parseInteger } = require('../src/config');
 const { getProvider, detectProvider, listProviders } = require('../src/providers');
 const { dotStuff, encodeHeaderValue, wrapBase64, bareAddress, buildTestMessage, toDataPayload } = require('../src/message');
 const { chooseMechanism, plainToken, cramMd5Response, xoauth2Token } = require('../src/auth');
@@ -110,7 +110,7 @@ test('resolveConfig: явный порт 587 переключает на STARTTL
 });
 
 test('resolveConfig: флаг --secure сильнее порта', () => {
-  const config = resolveConfig(parseArgs(['-H', 'mail.example.com', '--port', '587', '--secure']), {});
+  const config = resolveConfig(parseArgs(['-H', 'mail.example.com', '--port', '587', '--secure', '-u', 'me@example.com']), {});
   assert.equal(config.secure, true);
 });
 
@@ -122,7 +122,7 @@ test('resolveConfig: переменные окружения', () => {
 });
 
 test('resolveConfig: аргументы важнее окружения', () => {
-  const config = resolveConfig(parseArgs(['-H', 'from-args.com']), { SMTP_HOST: 'from-env.com' });
+  const config = resolveConfig(parseArgs(['-H', 'from-args.com', '--no-auth']), { SMTP_HOST: 'from-env.com' });
   assert.equal(config.host, 'from-args.com');
 });
 
@@ -211,4 +211,59 @@ test('i18n: язык из окружения', () => {
   assert.equal(detectLanguage({ LANG: 'ru_RU.UTF-8' }), 'ru');
   assert.equal(detectLanguage({ LANG: 'en_US.UTF-8' }), 'en');
   assert.equal(detectLanguage({}), 'en');
+});
+
+test('parseInteger: отвергает нечисловые и выходящие за границы значения', () => {
+  assert.equal(parseInteger('587', '--port', 1, 65535), 587);
+  assert.equal(parseInteger(undefined, '--port', 1, 65535), null);
+  assert.equal(parseInteger('', '--port', 1, 65535), null);
+  for (const bad of ['abc', '1.5', '0', '70000', 'NaN', '12abc']) {
+    assert.throws(() => parseInteger(bad, '--port', 1, 65535), ConfigError, `должно упасть на ${bad}`);
+  }
+});
+
+test('resolveConfig: нечисловой --timeout — ошибка, а не NaN', () => {
+  assert.throws(() => resolveConfig(parseArgs(['-u', 'me@gmail.com', '--timeout', 'abc']), {}), ConfigError);
+  assert.equal(resolveConfig(parseArgs(['-u', 'me@gmail.com']), {}).timeout, 20000);
+  assert.equal(resolveConfig(parseArgs(['-u', 'me@gmail.com', '--timeout', '5000']), {}).timeout, 5000);
+});
+
+test('resolveConfig: нечисловой --port — ошибка', () => {
+  assert.throws(() => resolveConfig(parseArgs(['-u', 'me@gmail.com', '--port', 'нет']), {}), ConfigError);
+  assert.throws(() => resolveConfig(parseArgs(['-u', 'me@gmail.com', '--port', '99999']), {}), ConfigError);
+});
+
+test('resolveConfig: --ports разбирается и чистится от дублей', () => {
+  const config = resolveConfig(parseArgs(['-u', 'me@gmail.com', '--probe', '--ports', '25, 465 ,587,465']), {});
+  assert.deepEqual(config.ports, [25, 465, 587]);
+  assert.throws(() => resolveConfig(parseArgs(['-u', 'me@gmail.com', '--ports', '25,abc']), {}), ConfigError);
+});
+
+test('resolveConfig: аутентификация без логина — ошибка', () => {
+  assert.throws(() => resolveConfig(parseArgs(['-H', 'mail.example.com']), {}), ConfigError);
+  // --no-auth и XOAUTH2-токен снимают требование логина.
+  assert.equal(resolveConfig(parseArgs(['-H', 'mail.example.com', '--no-auth']), {}).auth, false);
+  assert.doesNotThrow(() => resolveConfig(parseArgs(['-H', 'mail.example.com', '--oauth', 'ya29.token']), {}));
+});
+
+test('resolveConfig: --send требует отправителя и получателя', () => {
+  assert.throws(
+    () => resolveConfig(parseArgs(['-H', 'mail.example.com', '--no-auth', '--send']), {}),
+    (error) => error instanceof ConfigError && error.i18nKey === 'errNoSender'
+  );
+  assert.throws(
+    () => resolveConfig(parseArgs(['-H', 'mail.example.com', '--no-auth', '--send', '--from', 'не адрес']), {}),
+    (error) => error instanceof ConfigError && error.i18nKey === 'errBadAddress'
+  );
+  assert.throws(
+    () => resolveConfig(parseArgs(['-H', 'mail.example.com', '--no-auth', '--send', '--from', 'a@example.com', '--to', 'без-собаки']), {}),
+    (error) => error instanceof ConfigError && error.i18nKey === 'errBadAddress'
+  );
+  // Локальные релеи (MailHog) обходятся доменом без точки — такой адрес принимаем.
+  assert.doesNotThrow(() =>
+    resolveConfig(parseArgs(['-H', '127.0.0.1', '--no-auth', '--send', '--from', 'Тест <a@localhost>', '--to', 'b@example.co.uk']), {})
+  );
+  const config = resolveConfig(parseArgs(['-u', 'me@gmail.com', '--send']), {});
+  assert.equal(config.from, 'me@gmail.com');
+  assert.equal(config.to, 'me@gmail.com');
 });
