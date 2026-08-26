@@ -1,7 +1,7 @@
 {
   "name": "smtp-checker",
-  "version": "1.0.0",
-  "description": "Быстрая проверка SMTP из консоли: подключение, TLS, аутентификация и тестовое письмо. Zero-dependency CLI to verify SMTP settings for Gmail, Yandex, Mail.ru, Outlook, SES and other providers.",
+  "version": "1.0.1",
+  "description": "Zero-dependency CLI to verify SMTP settings: connection, TLS, authentication and a test message. Presets for Gmail, Yandex, Mail.ru, Outlook, SES and other providers.",
   "keywords": [
     "smtp",
     "smtp-test",
@@ -45,7 +45,7 @@
     "index.d.ts",
     "CHANGELOG.md",
     "README.md",
-    "README.en.md",
+    "README.ru.md",
     "LICENSE"
   ],
   "engines": {
